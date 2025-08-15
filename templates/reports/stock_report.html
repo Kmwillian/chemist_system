@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Report - Sebha Medical{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-boxes me-2"></i> Stock Report
+{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header">
+        <form class="row g-2 align-items-end" method="get">
+            <div class="col-md-4">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"s" %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Stock Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All</option>
+                    <option value="low" {% if request.GET.status == "low" %}selected{% endif %}>Low Stock</option>
+                    <option value="out" {% if request.GET.status == "out" %}selected{% endif %}>Out of Stock</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-primary w-100" type="submit">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card-body">
+        {% if products %}
+            <div class="mb-3">
+                <h6 class="fw-bold">Inventory Summary</h6>
+                <p><strong>Total Products:</strong> {{ products|length }}</p>
+                <p><strong>Total Stock Units:</strong> {{ total_stock }}</p>
+                <p><strong>Total Inventory Value:</strong> ${{ total_value|floatformat:2 }}</p>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Stock</th>
+                            <th>Unit Price</th>
+                            <th>Total Value</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                            <tr {% if product.stock == 0 %}class="table-danger"{% elif product.stock <= product.low_stock_threshold %}class="table-warning"{% endif %}>
+                                <td>{{ product.name }}</td>
+                                <td>{{ product.category.name }}</td>
+                                <td>{{ product.stock }}</td>
+                                <td>${{ product.price|floatformat:2 }}</td>
+                                <td>${{ product.stock|floatformat:0|add:"0"|floatformat:2|floatformat:0 }}</td>
+                                <td>
+                                    {% if product.stock == 0 %}
+                                        <span class="badge bg-danger">Out of Stock</span>
+                                    {% elif product.stock <= product.low_stock_threshold %}
+                                        <span class="badge bg-warning">Low Stock</span>
+                                    {% else %}
+                                        <span class="badge bg-success">In Stock</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted text-center">No products found for this filter.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

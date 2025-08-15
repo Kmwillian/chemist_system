@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ product.name }} - Product Details{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'inventory:product_list' %}">Products</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+            </ol>
+        </nav>
+        <h2>{{ product.name }}</h2>
+    </div>
+    <div>
+        <a href="{% url 'inventory:product_edit' product.pk %}" class="btn btn-primary">
+            <i class="fas fa-edit me-2"></i>Edit Product
+        </a>
+        <a href="{% url 'inventory:product_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Products
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Product Image -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" class="img-fluid rounded" alt="{{ product.name }}" 
+                         style="max-height: 300px; object-fit: cover;">
+                {% else %}
+                    <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                         style="height: 300px;">
+                        <i class="fas fa-pills fa-5x text-muted"></i>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Information -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Product Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Product Name:</strong></div>
+                    <div class="col-sm-8">{{ product.name }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Generic Name:</strong></div>
+                    <div class="col-sm-8">{{ product.generic_name|default:"Not specified" }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Category:</strong></div>
+                    <div class="col-sm-8">{{ product.category.name }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Barcode:</strong></div>
+                    <div class="col-sm-8">{{ product.barcode|default:"Not specified" }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Description:</strong></div>
+                    <div class="col-sm-8">{{ product.description|default:"No description available" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Pricing Information -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Pricing</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Cost Price:</strong></div>
+                    <div class="col-sm-6">KES {{ product.cost_price|default:"0.00" }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Selling Price:</strong></div>
+                    <div class="col-sm-6"><span class="text-success fw-bold">KES {{ product.selling_price }}</span></div>
+                </div>
+                
+                {% if product.cost_price and product.selling_price %}
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Profit Margin:</strong></div>
+                    <div class="col-sm-6">
+                        {{ product.profit_margin|floatformat:2 }}%
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Information -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Stock Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Current Stock:</strong></div>
+                    <div class="col-sm-6">
+                        <span class="{% if product.is_low_stock %}text-warning{% else %}text-success{% endif %}">
+                            {{ product.quantity_in_stock }} units
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Minimum Stock Level:</strong></div>
+                    <div class="col-sm-6">{{ product.minimum_stock_level|default:"Not set" }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Status:</strong></div>
+                    <div class="col-sm-6">
+                        {% if product.is_expired %}
+                            <span class="badge bg-danger">Expired</span>
+                        {% elif product.is_low_stock %}
+                            <span class="badge bg-warning">Low Stock</span>
+                        {% else %}
+                            <span class="badge bg-success">In Stock</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if product.expiry_date %}
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Expiry Date:</strong></div>
+                    <div class="col-sm-6">
+                        <span class="{% if product.is_expired %}text-danger{% elif product.expiry_date %}text-muted{% endif %}">
+                            {{ product.expiry_date|date:"F d, Y" }}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if product.supplier %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Supplier Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Supplier Name:</strong></div>
+                    <div class="col-sm-3">{{ product.supplier.name }}</div>
+                    
+                    <div class="col-sm-3"><strong>Contact:</strong></div>
+                    <div class="col-sm-3">{{ product.supplier.phone|default:"Not provided" }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Email:</strong></div>
+                    <div class="col-sm-3">{{ product.supplier.email|default:"Not provided" }}</div>
+                    
+                    <div class="col-sm-3"><strong>Address:</strong></div>
+                    <div class="col-sm-3">{{ product.supplier.address|default:"Not provided" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Additional Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Batch Number:</strong></div>
+                    <div class="col-sm-3">{{ product.batch_number|default:"Not specified" }}</div>
+                    
+                    <div class="col-sm-3"><strong>Manufacture Date:</strong></div>
+                    <div class="col-sm-3">{{ product.manufacture_date|date:"F d, Y"|default:"Not specified" }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Date Added:</strong></div>
+                    <div class="col-sm-3">{{ product.created_at|date:"F d, Y" }}</div>
+                    
+                    <div class="col-sm-3"><strong>Last Updated:</strong></div>
+                    <div class="col-sm-3">{{ product.updated_at|date:"F d, Y" }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Active Status:</strong></div>
+                    <div class="col-sm-9">
+                        {% if product.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

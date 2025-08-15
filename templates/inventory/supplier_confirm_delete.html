@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete {{ supplier.name }} - Sebha Medical{% endblock %}
+
+{% block page_title %}Delete Supplier{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirm Deletion
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
+                    <h4 class="text-danger">Are you sure?</h4>
+                    <p class="lead">You are about to delete the supplier:</p>
+                    <div class="alert alert-light border">
+                        <h5 class="mb-1">{{ supplier.name }}</h5>
+                        {% if supplier.contact_person %}
+                            <small class="text-muted">Contact: {{ supplier.contact_person }}</small><br>
+                        {% endif %}
+                        {% if supplier.phone %}
+                            <small class="text-muted">Phone: {{ supplier.phone }}</small><br>
+                        {% endif %}
+                        {% if supplier.email %}
+                            <small class="text-muted">Email: {{ supplier.email }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Warning Messages -->
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Warning!
+                    </h6>
+                    <ul class="mb-0">
+                        <li>This action cannot be undone</li>
+                        <li>All supplier information will be permanently deleted</li>
+                        <li>Purchase history (if any) may be affected</li>
+                    </ul>
+                </div>
+                
+                {% comment %}
+                <!-- Uncomment this section when you implement Purchase tracking -->
+                {% if supplier.purchases.exists %}
+                <div class="alert alert-danger">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-ban me-2"></i>
+                        Cannot Delete!
+                    </h6>
+                    <p class="mb-0">
+                        This supplier has {{ supplier.purchases.count }} purchase order(s) associated with it. 
+                        You cannot delete a supplier with existing purchase history.
+                    </p>
+                </div>
+                {% endif %}
+                {% endcomment %}
+                
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between mt-4">
+                    <div>
+                        <a href="{% url 'inventory:supplier_detail' supplier.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Supplier
+                        </a>
+                        <a href="{% url 'inventory:supplier_list' %}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-list me-2"></i>Supplier List
+                        </a>
+                    </div>
+                    
+                    {% comment %}
+                    <!-- Show delete button only if no purchases exist -->
+                    {% if not supplier.purchases.exists %}
+                    {% endcomment %}
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" id="deleteBtn">
+                            <i class="fas fa-trash-alt me-2"></i>
+                            Yes, Delete Supplier
+                        </button>
+                    </form>
+                    {% comment %}
+                    {% endif %}
+                    {% endcomment %}
+                </div>
+                
+                <!-- Alternative Actions -->
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="text-muted">Alternative Actions:</h6>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'inventory:supplier_edit' supplier.pk %}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-edit me-2"></i>Edit Instead
+                        </a>
+                        {% if supplier.is_active %}
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="deactivateSupplier()">
+                                <i class="fas fa-pause me-2"></i>Deactivate Instead
+                            </button>
+                        {% else %}
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="activateSupplier()">
+                                <i class="fas fa-play me-2"></i>Reactivate Instead
+                            </button>
+                        {% endif %}
+                    </div>
+                    <small class="text-muted">
+                        Consider deactivating instead of deleting to preserve data integrity.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deactivation Form (Hidden) -->
+<form id="deactivateForm" method="post" action="{% url 'inventory:supplier_edit' supplier.pk %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="name" value="{{ supplier.name }}">
+    <input type="hidden" name="contact_person" value="{{ supplier.contact_person }}">
+    <input type="hidden" name="phone" value="{{ supplier.phone }}">
+    <input type="hidden" name="email" value="{{ supplier.email }}">
+    <input type="hidden" name="address" value="{{ supplier.address }}">
+    <input type="hidden" name="tax_id" value="{{ supplier.tax_id }}">
+    <input type="hidden" name="notes" value="{{ supplier.notes }}">
+    <input type="hidden" name="is_active" value="false">
+</form>
+
+<!-- Activation Form (Hidden) -->
+<form id="activateForm" method="post" action="{% url 'inventory:supplier_edit' supplier.pk %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="name" value="{{ supplier.name }}">
+    <input type="hidden" name="contact_person" value="{{ supplier.contact_person }}">
+    <input type="hidden" name="phone" value="{{ supplier.phone }}">
+    <input type="hidden" name="email" value="{{ supplier.email }}">
+    <input type="hidden" name="address" value="{{ supplier.address }}">
+    <input type="hidden" name="tax_id" value="{{ supplier.tax_id }}">
+    <input type="hidden" name="notes" value="{{ supplier.notes }}">
+    <input type="hidden" name="is_active" value="true">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add confirmation dialog for delete action
+    document.getElementById('deleteBtn').addEventListener('click', function(e) {
+        if (!confirm('Are you absolutely sure you want to delete this supplier? This action cannot be undone!')) {
+            e.preventDefault();
+        }
+    });
+    
+    // Handle deactivate supplier
+    function deactivateSupplier() {
+        if (confirm('Do you want to deactivate this supplier instead of deleting it?')) {
+            document.getElementById('deactivateForm').submit();
+        }
+    }
+    
+    // Handle activate supplier
+    function activateSupplier() {
+        if (confirm('Do you want to reactivate this supplier?')) {
+            document.getElementById('activateForm').submit();
+        }
+    }
+</script>
+{% endblock %}

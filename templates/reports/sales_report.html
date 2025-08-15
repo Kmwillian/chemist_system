@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+
+{% block title %}Sales Report - Eldoret Chemist{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-file-invoice-dollar me-2"></i> Sales Report
+{% endblock %}
+
+{% block content %}
+<style>
+    .report-card {
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    .report-card:hover {
+        transform: translateY(-2px);
+    }
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+    .filter-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    .btn-export {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border: none;
+        color: white;
+    }
+    .btn-export:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        color: white;
+    }
+    .badge-payment {
+        font-size: 0.75em;
+    }
+    .progress-thin {
+        height: 8px;
+    }
+</style>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Financial Analytics Dashboard</h4>
+            <div>
+                <a href="?{{ request.GET.urlencode }}&export=pdf" class="btn btn-export me-2">
+                    <i class="fas fa-file-pdf me-1"></i> Export PDF
+                </a>
+                <button class="btn btn-outline-secondary" onclick="window.print()">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Filters -->
+<div class="card filter-card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3"><i class="fas fa-filter me-2"></i>Advanced Filters</h5>
+        <form class="row g-3" method="get">
+            <div class="col-md-2">
+                <label class="form-label">Start Date</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">End Date</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Payment Method</label>
+                <select name="payment_method" class="form-select">
+                    <option value="">All Methods</option>
+                    {% for method_value, method_label in payment_methods %}
+                    <option value="{{ method_value }}" {% if filters.payment_method == method_value %}selected{% endif %}>
+                        {{ method_label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for category in all_categories %}
+                    <option value="{{ category.name }}" {% if filters.category == category.name %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Customer Search</label>
+                <input type="text" name="customer_search" class="form-control" 
+                       placeholder="Customer name..." value="{{ filters.customer_search }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-light w-100">
+                    <i class="fas fa-search me-1"></i> Filter
+                </button>
+            </div>
+            <div class="col-md-6">
+                <input type="text" name="invoice_search" class="form-control" 
+                       placeholder="Search by invoice number..." value="{{ filters.invoice_search }}">
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Financial Summary Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card report-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary me-3">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="text-muted small">Total Sales (Grand Total)</div>
+                        <div class="h4 mb-0 text-primary">KES {{ financial_data.total_sales|floatformat:2|default:0 }}</div>
+                        <div class="progress progress-thin mt-2">
+                            <div class="progress-bar bg-primary" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card report-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-info bg-opacity-10 text-info me-3">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="text-muted small">Subtotal (Before Tax)</div>
+                        <div class="h4 mb-0 text-info">KES {{ financial_data.total_subtotal|floatformat:2|default:0 }}</div>
+                        <small class="text-muted">Base amount</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card report-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning me-3">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="text-muted small">Tax Collected</div>
+                        <div class="h4 mb-0 text-warning">KES {{ financial_data.total_tax|floatformat:2|default:0 }}</div>
+                        <small class="text-muted">16% VAT</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card report-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-success bg-opacity-10 text-success me-3">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="text-muted small">Gross Profit</div>
+                        <div class="h4 mb-0 text-success">KES {{ total_profit|floatformat:2|default:0 }}</div>
+                        <small class="text-success">{{ profit_margin|floatformat:1|default:0 }}% margin</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Stats Row -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card report-card">
+            <div class="card-body text-center">
+                <div class="h3 text-primary mb-1">{{ financial_data.total_transactions|default:0 }}</div>
+                <div class="text-muted">Total Transactions</div>
+                <small class="text-muted">KES {{ financial_data.average_sale|floatformat:2|default:0 }} avg</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card report-card">
+            <div class="card-body text-center">
+                <div class="h3 text-danger mb-1">KES {{ financial_data.total_discount|floatformat:2|default:0 }}</div>
+                <div class="text-muted">Total Discounts</div>
+                <small class="text-muted">Applied to sales</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card report-card">
+            <div class="card-body text-center">
+                <div class="h3 text-warning mb-1">{{ low_stock_products.count|default:0 }}</div>
+                <div class="text-muted">Low Stock Alerts</div>
+                <small class="text-warning">Needs attention</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card report-card">
+            <div class="card-body text-center">
+                <div class="h3 text-info mb-1">{{ start_date|timesince:end_date }}</div>
+                <div class="text-muted">Report Period</div>
+                <small class="text-muted">Date range</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Sales Table -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-table me-2 text-primary"></i>Detailed Sales Report</h5>
+            <span class="badge bg-primary">{{ sales|length }} record{{ sales|length|pluralize }}</span>
+        </div>
+    </div>
+    
+    {% if sales %}
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Invoice #</th>
+                    <th>Customer</th>
+                    <th>Category</th>
+                    <th>Unit Price</th>
+                    <th>Quantity Sold</th>
+                    <th>Subtotal</th>
+                    <th>Tax</th>
+                    <th>Grand Total</th>
+                    <th>Payment Method</th>
+                    <th>Invoice Status</th>
+                    <th>Cashier/Salesperson</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales %}
+                <tr>
+                    <td>{{ sale.sale_date|date:"M d, Y H:i" }}</td>
+                    <td>
+                        <strong class="text-primary">{{ sale.invoice_number|default:sale.id }}</strong>
+                    </td>
+                    <td>{{ sale.customer_name|default:"Walk-in Customer" }}</td>
+                    <td>
+                        {% for item in sale.items.all|slice:":2" %}
+                            <span class="badge bg-light text-dark me-1 mb-1">{{ item.product.category.name }}</span>
+                        {% endfor %}
+                        {% if sale.items.all|length > 2 %}
+                            <span class="badge bg-secondary">+{{ sale.items.all|length|add:"-2" }} more</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% for item in sale.items.all|slice:":1" %}
+                            KES {{ item.unit_price|floatformat:2 }}
+                        {% endfor %}
+                        {% if sale.items.all|length > 1 %}
+                            <small class="text-muted d-block">Multiple items</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-info">
+                            {% for item in sale.items.all %}{{ item.quantity }}{% if not forloop.last %} + {% endif %}{% endfor %}
+                        </span>
+                    </td>
+                    <td>KES {{ sale.subtotal|floatformat:2 }}</td>
+                    <td class="text-warning">KES {{ sale.tax_amount|floatformat:2 }}</td>
+                    <td><strong class="text-success">KES {{ sale.total_amount|floatformat:2 }}</strong></td>
+                    <td>
+                        <span class="badge badge-payment 
+                            {% if sale.payment_method == 'cash' %}bg-success
+                            {% elif sale.payment_method == 'mpesa' %}bg-primary
+                            {% elif sale.payment_method == 'card' %}bg-info
+                            {% else %}bg-secondary{% endif %}">
+                            {{ sale.get_payment_method_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if sale.status == 'paid' %}bg-success
+                            {% elif sale.status == 'pending' %}bg-warning text-dark
+                            {% elif sale.status == 'refunded' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {{ sale.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-circle text-muted me-1"></i>
+                            <small>{{ sale.served_by.get_full_name|default:sale.served_by.username }}</small>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card-body text-center py-5">
+        <i class="fas fa-inbox text-muted fa-3x mb-3"></i>
+        <p class="text-muted mb-0">No sales found for the selected criteria.</p>
+        <p class="text-muted small">Try adjusting your filters or date range.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Analytics Row -->
+<div class="row">
+    <!-- Top Selling Products -->
+    <div class="col-lg-6 mb-4">
+        <div class="card report-card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-star text-warning me-2"></i>Top Selling Products</h5>
+            </div>
+            <div class="card-body">
+                {% if top_products %}
+                    {% for product in top_products|slice:":5" %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <div class="fw-bold">{{ product.product__name }}</div>
+                            <small class="text-muted">{{ product.product__category__name }}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold text-primary">{{ product.total_quantity }} units</div>
+                            <small class="text-success">KES {{ product.total_revenue|floatformat:2 }}</small>
+                        </div>
+                    </div>
+                    <div class="progress progress-thin mb-3">
+                        <div class="progress-bar bg-primary" 
+                             style="width: {% widthratio product.total_quantity top_products.0.total_quantity 100 %}%"></div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No product data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Selling Categories -->
+    <div class="col-lg-6 mb-4">
+        <div class="card report-card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-tags text-info me-2"></i>Top Selling Categories</h5>
+            </div>
+            <div class="card-body">
+                {% if top_categories %}
+                    {% for category in top_categories|slice:":5" %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <div class="fw-bold">{{ category.product__category__name }}</div>
+                            <small class="text-muted">{{ category.product_count }} product{{ category.product_count|pluralize }}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold text-info">{{ category.total_quantity }} units</div>
+                            <small class="text-success">KES {{ category.total_revenue|floatformat:2 }}</small>
+                        </div>
+                    </div>
+                    <div class="progress progress-thin mb-3">
+                        <div class="progress-bar bg-info" 
+                             style="width: {% widthratio category.total_revenue top_categories.0.total_revenue 100 %}%"></div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No category data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Method Breakdown -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card report-card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-credit-card text-success me-2"></i>Payment Method Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="paymentChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Low Stock Alerts -->
+    <div class="col-lg-4 mb-4">
+        <div class="card report-card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Stock Alerts</h5>
+            </div>
+            <div class="card-body">
+                {% if low_stock_products %}
+                    <div class="alert alert-warning">
+                        <strong>{{ low_stock_products|length }}</strong> product{{ low_stock_products|length|pluralize }} running low!
+                    </div>
+                    {% for product in low_stock_products|slice:":5" %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <div class="small fw-bold">{{ product.name }}</div>
+                            <small class="text-muted">{{ product.category.name }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-warning text-dark">{{ product.quantity_in_stock }} left</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if low_stock_products|length > 5 %}
+                    <small class="text-muted">...and {{ low_stock_products|length|add:"-5" }} more</small>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center text-success">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <p class="mb-0">All products are well stocked!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Script -->
+{% if payment_breakdown %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+    // Payment Method Chart
+    const paymentCtx = document.getElementById('paymentChart').getContext('2d');
+    const paymentChart = new Chart(paymentCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [
+                {% for payment in payment_breakdown %}
+                    '{{ payment.payment_method|title }}'{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for payment in payment_breakdown %}
+                        {{ payment.total }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    '#28a745',  // Cash - Green
+                    '#007bff',  // M-Pesa - Blue  
+                    '#17a2b8',  // Card - Teal
+                    '#6c757d'   // Credit - Gray
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': KES ' + context.parsed.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+
+<script>
+    // Print function
+    function printReport() {
+        window.print();
+    }
+    
+    // Export functions (you'll need to implement the backend endpoints)
+    function exportToPDF() {
+        window.location.href = '?{{ request.GET.urlencode }}&export=pdf';
+    }
+</script>
+
+{% endblock %}

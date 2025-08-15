@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Edit {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'inventory:product_list' %}">Products</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'inventory:product_detail' product.pk %}">{{ product.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Edit</li>
+            </ol>
+        </nav>
+        <h2>Edit Product</h2>
+    </div>
+    <div>
+        <a href="{% url 'inventory:product_detail' product.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-times me-2"></i>Cancel
+        </a>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div class="row">
+        <!-- Basic Information -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Basic Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Product Name *</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.name.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.generic_name.id_for_label }}" class="form-label">Generic Name</label>
+                            {{ form.generic_name }}
+                            {% if form.generic_name.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.generic_name.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">Category *</label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.category.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.barcode.id_for_label }}" class="form-label">Barcode</label>
+                            {{ form.barcode }}
+                            {% if form.barcode.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.barcode.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.description.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pricing -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Pricing</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.cost_price.id_for_label }}" class="form-label">Cost Price (KES) *</label>
+                            {{ form.cost_price }}
+                            {% if form.cost_price.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.cost_price.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.selling_price.id_for_label }}" class="form-label">Selling Price (KES) *</label>
+                            {{ form.selling_price }}
+                            {% if form.selling_price.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.selling_price.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stock Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Stock Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.quantity_in_stock.id_for_label }}" class="form-label">Current Stock *</label>
+                            {{ form.quantity_in_stock }}
+                            {% if form.quantity_in_stock.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.quantity_in_stock.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.minimum_stock_level.id_for_label }}" class="form-label">Minimum Stock Level *</label>
+                            {{ form.minimum_stock_level }}
+                            {% if form.minimum_stock_level.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.minimum_stock_level.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.batch_number.id_for_label }}" class="form-label">Batch Number</label>
+                            {{ form.batch_number }}
+                            {% if form.batch_number.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.batch_number.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.manufacture_date.id_for_label }}" class="form-label">Manufacture Date</label>
+                            {{ form.manufacture_date }}
+                            {% if form.manufacture_date.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.manufacture_date.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.expiry_date.id_for_label }}" class="form-label">Expiry Date</label>
+                            {{ form.expiry_date }}
+                            {% if form.expiry_date.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.expiry_date.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.supplier.id_for_label }}" class="form-label">Supplier *</label>
+                            {{ form.supplier }}
+                            {% if form.supplier.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.supplier.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Image and Status -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Product Image</h5>
+                </div>
+                <div class="card-body">
+                    {% if product.image %}
+                        <div class="mb-3 text-center">
+                            <img src="{{ product.image.url }}" class="img-fluid rounded" alt="{{ product.name }}" 
+                                 style="max-height: 200px; object-fit: cover;">
+                        </div>
+                    {% endif %}
+                    
+                    {% if form.image %}
+                    <div class="mb-3">
+                        <label for="{{ form.image.id_for_label }}" class="form-label">
+                            {% if product.image %}Update Image{% else %}Add Image{% endif %}
+                        </label>
+                        {{ form.image }}
+                        {% if form.image.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.image.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Status</h5>
+                </div>
+                <div class="card-body">
+                    {% if form.is_active %}
+                    <div class="form-check">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            Active Product
+                        </label>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="card">
+                <div class="card-body">
+                    <button type="submit" class="btn btn-primary w-100 mb-2">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                    
+                    <a href="{% url 'inventory:product_detail' product.pk %}" class="btn btn-outline-secondary w-100 mb-2">
+                        <i class="fas fa-eye me-2"></i>View Product
+                    </a>
+                    
+                    <a href="{% url 'inventory:product_list' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-list me-2"></i>All Products
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add form-control class to all form fields
+    const formFields = document.querySelectorAll('input, select, textarea');
+    formFields.forEach(field => {
+        if (!field.classList.contains('form-check-input')) {
+            field.classList.add('form-control');
+        }
+    });
+    
+    // Set date input type for expiry date if it exists
+    const expiryDateField = document.querySelector('input[name="expiry_date"]');
+    if (expiryDateField && expiryDateField.type !== 'date') {
+        expiryDateField.type = 'date';
+    }
+});
+</script>
+{% endblock %}

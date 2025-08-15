@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Medicine Categories{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Medicine Categories</h4>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                <i class="fas fa-plus me-2"></i>Add New Category
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Categories Grid -->
+<div class="row">
+    {% for category in categories %}
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 category-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="category-icon">
+                        <i class="fas {{ category.icon|default:'fa-pills' }} fa-2x text-primary"></i>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="editCategory({{ category.id }}, '{{ category.name }}', '{{ category.description|default:'' }}')">
+                                    <i class="fas fa-edit me-2"></i>Edit
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="deleteCategory({{ category.id }}, '{{ category.name }}')">
+                                    <i class="fas fa-trash me-2"></i>Delete
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h5 class="card-title">{{ category.name }}</h5>
+                <p class="card-text text-muted">
+                    {{ category.description|default:"No description available"|truncatewords:15 }}
+                </p>
+                
+               <div class="mt-auto">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-success">{{ category.active_products_count }} Active</span>
+                            {% if category.products.count > category.active_products_count %}
+                                <span class="badge bg-secondary">{{ category.products.count|add:"-"|add:category.active_products_count }} Inactive</span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'inventory:product_list' %}?category={{ category.id }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>View Products
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-tags fa-4x text-muted mb-4"></i>
+                <h5 class="text-muted mb-3">No Categories Created</h5>
+                <p class="text-muted mb-4">
+                    Create your first product category to organize your pharmacy inventory better.
+                    Categories help you group similar medicines together.
+                </p>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                    <i class="fas fa-plus me-2"></i>Create First Category
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Popular Categories Quick Add -->
+{% if not categories %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-star me-2"></i>Popular Pharmacy Categories
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Click to quickly add common pharmacy categories:</p>
+                <div class="row">
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="quickAddCategory('Pain Relief', 'Analgesics and pain management medicines', 'fa-hand-holding-medical')">
+                            <i class="fas fa-hand-holding-medical me-2"></i>Pain Relief
+                        </button>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="quickAddCategory('Antibiotics', 'Bacterial infection treatment medicines', 'fa-shield-virus')">
+                            <i class="fas fa-shield-virus me-2"></i>Antibiotics
+                        </button>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="quickAddCategory('Vitamins', 'Vitamin supplements and nutritional support', 'fa-seedling')">
+                            <i class="fas fa-seedling me-2"></i>Vitamins
+                        </button>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="quickAddCategory('Cold & Flu', 'Respiratory and flu treatment medicines', 'fa-head-side-cough')">
+                            <i class="fas fa-head-side-cough me-2"></i>Cold & Flu
+                        </button>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="quickAddCategory('Digestive', 'Stomach and digestive system medicines', 'fa-stomach')">
+                            <i class="fas fa-pills me-2"></i>Digestive
+                        </button>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="quickAddCategory('Skin Care', 'Topical treatments and skin care products', 'fa-hand-sparkles')">
+                            <i class="fas fa-hand-sparkles me-2"></i>Skin Care
+                        </button>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="quickAddCategory('Heart & BP', 'Cardiovascular and blood pressure medicines', 'fa-heartbeat')">
+                            <i class="fas fa-heartbeat me-2"></i>Heart & BP
+                        </button>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="quickAddCategory('Diabetes', 'Diabetes management and blood sugar control', 'fa-tint')">
+                            <i class="fas fa-tint me-2"></i>Diabetes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Add/Edit Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCategoryModalLabel">Add New Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="categoryForm" method="post" action="{% url 'inventory:add_category' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" id="categoryId" name="category_id" value="">
+                    
+                    <div class="mb-3">
+                        <label for="categoryName" class="form-label">Category Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="categoryName" name="name" required placeholder="e.g., Pain Relief, Antibiotics">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="categoryDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="categoryDescription" name="description" rows="3" placeholder="Brief description of this category..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="categoryIcon" class="form-label">Icon</label>
+                        <select class="form-select" id="categoryIcon" name="icon">
+                            <option value="fa-pills">💊 Pills (Default)</option>
+                            <option value="fa-hand-holding-medical">🏥 Medical Care</option>
+                            <option value="fa-shield-virus">🛡️ Protection</option>
+                            <option value="fa-seedling">🌱 Natural/Vitamins</option>
+                            <option value="fa-head-side-cough">🤧 Respiratory</option>
+                            <option value="fa-heartbeat">❤️ Heart</option>
+                            <option value="fa-tint">💧 Blood/Diabetes</option>
+                            <option value="fa-hand-sparkles">✨ Skin Care</option>
+                            <option value="fa-baby">👶 Baby Care</option>
+                            <option value="fa-eye">👁️ Eye Care</option>
+                            <option value="fa-tooth">🦷 Dental</option>
+                            <option value="fa-female">♀️ Women's Health</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Save Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5>Are you sure?</h5>
+                    <p id="deleteMessage">This action cannot be undone.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">
+                    <i class="fas fa-trash me-2"></i>Delete Category
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for delete operations -->
+<form id="deleteForm" method="POST" action="{% url 'inventory:delete_category' %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" id="deleteCategoryId" name="category_id" value="">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentCategoryId = null;
+
+function editCategory(id, name, description) {
+    document.getElementById('addCategoryModalLabel').textContent = 'Edit Category';
+    document.getElementById('categoryId').value = id;
+    document.getElementById('categoryName').value = name;
+    document.getElementById('categoryDescription').value = description;
+    
+    // Change form action to edit
+    document.getElementById('categoryForm').action = '{% url "inventory:edit_category" %}';
+    
+    const modal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
+    modal.show();
+}
+
+function deleteCategory(id, name) {
+    currentCategoryId = id;
+    document.getElementById('deleteMessage').innerHTML = `
+        This will permanently delete the category "<strong>${name}</strong>".<br>
+        <small class="text-muted">Products in this category will need to be reassigned.</small>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+function quickAddCategory(name, description, icon) {
+    document.getElementById('addCategoryModalLabel').textContent = 'Add New Category';
+    document.getElementById('categoryId').value = '';
+    document.getElementById('categoryName').value = name;
+    document.getElementById('categoryDescription').value = description;
+    document.getElementById('categoryIcon').value = icon;
+    
+    // Reset form action to add
+    document.getElementById('categoryForm').action = '{% url "inventory:add_category" %}';
+    
+    const modal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
+    modal.show();
+}
+
+// Reset modal when closed
+document.getElementById('addCategoryModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('addCategoryModalLabel').textContent = 'Add New Category';
+    document.getElementById('categoryForm').reset();
+    document.getElementById('categoryId').value = '';
+    document.getElementById('categoryForm').action = '{% url "inventory:add_category" %}';
+});
+
+// Handle delete confirmation - FIXED VERSION
+document.getElementById('confirmDelete').addEventListener('click', function() {
+    if (currentCategoryId) {
+        // Hide the delete modal first
+        const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+        deleteModal.hide();
+        
+        // Use the hidden form to submit the delete request
+        document.getElementById('deleteCategoryId').value = currentCategoryId;
+        document.getElementById('deleteForm').submit();
+        
+        // Reset currentCategoryId
+        currentCategoryId = null;
+    }
+});
+
+// Add hover effects to category cards
+document.querySelectorAll('.category-card').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-5px)';
+        this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+        this.style.boxShadow = '0 2px 10px rgba(0,0,0,0.08)';
+    });
+});
+</script>
+
+<style>
+.category-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.category-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.dropdown-toggle::after {
+    display: none;
+}
+</style>
+{% endblock %}

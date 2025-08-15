@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ supplier.name }} - Sebha Medical{% endblock %}
+
+{% block page_title %}Supplier Details{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">
+                <i class="fas fa-truck me-2 text-primary"></i>
+                {{ supplier.name }}
+                {% if supplier.is_active %}
+                    <span class="badge bg-success ms-2">Active</span>
+                {% else %}
+                    <span class="badge bg-danger ms-2">Inactive</span>
+                {% endif %}
+            </h2>
+            <div>
+                <a href="{% url 'inventory:supplier_list' %}" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-arrow-left me-2"></i>Back to List
+                </a>
+                <a href="{% url 'inventory:supplier_edit' supplier.pk %}" class="btn btn-warning me-2">
+                    <i class="fas fa-edit me-2"></i>Edit
+                </a>
+                <button type="button" class="btn btn-danger" 
+                        onclick="confirmDelete('{{ supplier.name }}', '{% url 'inventory:supplier_delete' supplier.pk %}')">
+                    <i class="fas fa-trash me-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Supplier Information Cards -->
+<div class="row mb-4">
+    <!-- Contact Information -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-address-card me-2"></i>
+                    Contact Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Supplier Name:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {{ supplier.name }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Contact Person:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {{ supplier.contact_person|default:"Not specified" }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Phone:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {% if supplier.phone %}
+                            <a href="tel:{{ supplier.phone }}" class="text-decoration-none">
+                                <i class="fas fa-phone text-success me-2"></i>
+                                {{ supplier.phone }}
+                            </a>
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Email:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {% if supplier.email %}
+                            <a href="mailto:{{ supplier.email }}" class="text-decoration-none">
+                                <i class="fas fa-envelope text-primary me-2"></i>
+                                {{ supplier.email }}
+                            </a>
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Address:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {% if supplier.address %}
+                            <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                            {{ supplier.address }}
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if supplier.tax_id %}
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Tax ID:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {{ supplier.tax_id }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Business Information -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Business Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Status:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {% if supplier.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Added On:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {{ supplier.created_at|date:"F d, Y" }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Last Updated:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {{ supplier.updated_at|date:"F d, Y g:i A" }}
+                    </div>
+                </div>
+                
+                {% comment %}
+                <!-- Uncomment these when you implement Purchase tracking -->
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Total Orders:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-primary">{{ total_orders|default:0 }}</span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Total Amount:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <span class="fw-bold text-success">KES {{ total_amount|floatformat:2|default:"0.00" }}</span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Last Order:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {% if supplier.last_order_date %}
+                            {{ supplier.last_order_date|date:"M d, Y" }}
+                        {% else %}
+                            No orders yet
+                        {% endif %}
+                    </div>
+                </div>
+                {% endcomment %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Section -->
+{% if supplier.notes %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-sticky-note me-2"></i>
+                    Notes
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ supplier.notes|linebreaks }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% comment %}
+<!-- Purchase History Section -->
+<!-- Uncomment this section when you implement Purchase tracking -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Recent Purchase History
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_purchases %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Purchase ID</th>
+                                    <th>Date</th>
+                                    <th>Items</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for purchase in recent_purchases %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary">#{{ purchase.id }}</span>
+                                    </td>
+                                    <td>{{ purchase.created_at|date:"M d, Y" }}</td>
+                                    <td>{{ purchase.items.count }} items</td>
+                                    <td>KES {{ purchase.total_amount|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="badge bg-success">Completed</span>
+                                    </td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No Purchase History</h6>
+                        <p class="text-muted">No purchases have been made from this supplier yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endcomment %}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete supplier <strong id="supplierName"></strong>?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">Delete Supplier</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmDelete(supplierName, deleteUrl) {
+        document.getElementById('supplierName').textContent = supplierName;
+        document.getElementById('confirmDeleteBtn').href = deleteUrl;
+        
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        deleteModal.show();
+    }
+</script>
+{% endblock %}

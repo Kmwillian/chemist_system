@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Eldoret Chemist - Pharmacy Management{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% load static %}
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #059669;
+            --danger-color: #dc2626;
+            --warning-color: #d97706;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            background-color: #f8fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .sidebar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #1e40af 100%);
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            z-index: 1000;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            margin: 2px 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-radius: 12px;
+        }
+
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 12px 12px 0 0 !important;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card.success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #047857 100%);
+        }
+
+        .stat-card.warning {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #b45309 100%);
+        }
+
+        .stat-card.danger {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #b91c1c 100%);
+        }
+
+        .btn {
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+        }
+
+        .table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        /* Overlay for mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .hamburger {
+                display: block;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .navbar-brand {
+                font-size: 1rem;
+            }
+        }
+
+        /* Tablet Styles */
+        @media (max-width: 992px) and (min-width: 769px) {
+            .hamburger {
+                display: block;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="p-3 text-center border-bottom border-light">
+            <h5 class="text-white mb-0">
+                <i class="fas fa-pills me-2"></i>
+                Eldoret Chemist
+            </h5>
+        </div>
+        
+        <nav class="nav flex-column mt-3">
+            <a class="nav-link" href="{% url 'inventory:dashboard' %}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+            
+            <div class="nav-item">
+                <a class="nav-link" href="{% url 'inventory:product_list' %}">
+                    <i class="fas fa-pills me-2"></i>Products
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a class="nav-link" href="{% url 'inventory:category_list' %}">
+                    <i class="fas fa-tags me-2"></i>Categories
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a class="nav-link" href="{% url 'sales:pos' %}">
+                    <i class="fas fa-cash-register me-2"></i>Point of Sale
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a class="nav-link" href="{% url 'sales:sales_history' %}">
+                    <i class="fas fa-chart-line me-2"></i>Sales
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a class="nav-link" href="{% url 'inventory:supplier_list' %}">
+                    <i class="fas fa-truck me-2"></i>Suppliers
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a class="nav-link" href="{% url 'reports:sales_report' %}">
+                    <i class="fas fa-file-alt me-2"></i>Reports
+                </a>
+            </div>
+            
+            <div class="nav-item mt-auto mb-3">
+                <a class="nav-link" href="{% url 'accounts:logout' %}">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </a>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Top Navigation -->
+        <nav class="navbar navbar-light bg-white rounded mb-4">
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <button class="hamburger me-3" id="hamburgerBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <span class="navbar-brand mb-0">
+                        {% block page_title %}Pharmacy Management System{% endblock %}
+                    </span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="navbar-text me-3 d-none d-sm-inline">
+                        Welcome, {{ user.first_name|default:user.username }}
+                    </span>
+                    <span class="badge bg-primary">{{ user.userprofile.role|default:"Staff" }}</span>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <!-- Page Content -->
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const mainContent = document.getElementById('mainContent');
+
+            // Toggle sidebar
+            function toggleSidebar() {
+                sidebar.classList.toggle('show');
+                sidebarOverlay.classList.toggle('show');
+                
+                // Update hamburger icon
+                const icon = hamburgerBtn.querySelector('i');
+                if (sidebar.classList.contains('show')) {
+                    icon.className = 'fas fa-times';
+                } else {
+                    icon.className = 'fas fa-bars';
+                }
+            }
+
+            // Hamburger button click
+            hamburgerBtn.addEventListener('click', toggleSidebar);
+
+            // Overlay click to close sidebar
+            sidebarOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+                hamburgerBtn.querySelector('i').className = 'fas fa-bars';
+            });
+
+            // Close sidebar when clicking on navigation links on mobile
+            const navLinks = sidebar.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 992) {
+                        sidebar.classList.remove('show');
+                        sidebarOverlay.classList.remove('show');
+                        hamburgerBtn.querySelector('i').className = 'fas fa-bars';
+                    }
+                });
+            });
+
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 992) {
+                    sidebar.classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                    hamburgerBtn.querySelector('i').className = 'fas fa-bars';
+                }
+            });
+
+            // Add active class to current page link
+            const currentPath = window.location.pathname;
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
