@@ -25,7 +25,8 @@ SECRET_KEY = 'django-insecure-$$(80iq8h(mb-)!g-oo*6=em@b-iub-_-tu8y-d!5=c25b(%#l
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["chemist-system-2.onrender.com"]
+
 
 
 # Application definition
@@ -57,7 +58,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'pharmacy.urls'
+ROOT_URLCONF = 'chemist.urls'
 
 TEMPLATES = [
     {
