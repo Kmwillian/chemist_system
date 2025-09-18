@@ -12,6 +12,15 @@ from decimal import Decimal
 from .models import Sale, SaleItem
 from inventory.models import Product, Category
 from .forms import SaleForm
+# Add these imports to your existing views.py
+from .models import MpesaTransaction
+#from .mpesa_service import MpesaService
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 
 @login_required
 def create_sale(request):
@@ -438,3 +447,107 @@ def daily_sales_summary(request):
     }
     
     return JsonResponse(data)
+
+
+
+
+# Add these 3 new views to your views.py
+
+# Add these imports at the top of your views.py
+import requests
+import base64
+from datetime import datetime
+import json
+from decimal import Decimal
+from django.db import transaction
+from django.http import HttpResponse
+
+def check_payment_status(request, sale_id):
+    # Implement your logic here
+    return HttpResponse(f"Checking payment status for sale ID: {sale_id}")
+
+# Add MpesaService class
+class MpesaService:
+    def get_access_token(self):
+        url = f"{settings.MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
+        credentials = f"{settings.MPESA_CONSUMER_KEY}:{settings.MPESA_CONSUMER_SECRET}"
+        encoded_credentials = base64.b64encode(credentials.encode()).decode()
+        
+        headers = {'Authorization': f'Basic {encoded_credentials}'}
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            if response.status_code == 200:
+                return response.json().get('access_token')
+            return None
+        except:
+            return None
+    
+    def initiate_stk_push(self, phone, amount, account_reference):
+        token = self.get_access_token()
+        if not token:
+            return {'success': False, 'message': 'Failed to get token'}
+        
+        # Format phone
+        if phone.startswith('0'):
+            phone = '254' + phone[1:]
+        elif phone.startswith('7'):
+            phone = '254' + phone
+        
+        # Generate password
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        password_string = f"{settings.MPESA_BUSINESS_SHORT_CODE}{settings.MPESA_PASSKEY}{timestamp}"
+        password = base64.b64encode(password_string.encode()).decode()
+        
+        url = f"{settings.MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest"
+        headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
+        
+        payload = {
+            "BusinessShortCode": settings.MPESA_BUSINESS_SHORT_CODE,
+            "Password": password,
+            "Timestamp": timestamp,
+            "TransactionType": "CustomerPayBillOnline",
+            "Amount": int(amount),
+            "PartyA": phone,
+            "PartyB": settings.MPESA_BUSINESS_SHORT_CODE,
+            "PhoneNumber": phone,
+            "CallBackURL": "https://httpbin.org/post",  # Temporary
+            "AccountReference": account_reference,
+            "TransactionDesc": "POS Payment"
+        }
+        
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+            data = response.json()
+            
+            if response.status_code == 200 and data.get('ResponseCode') == '0':
+                return {'success': True, 'checkout_request_id': data.get('CheckoutRequestID')}
+            else:
+                return {'success': False, 'message': data.get('errorMessage', 'STK push failed')}
+        except Exception as e:
+            return {'success': False, 'message': f'Error: {str(e)}'}
+
+# Add M-Pesa views
+@login_required
+@require_http_methods(["POST"])
+def initiate_mpesa_payment(request):
+    try:
+        data = json.loads(request.body)
+        phone_number = data.get('phone_number')
+        amount = Decimal(str(data.get('amount')))
+        
+        if not phone_number or amount <= 0:
+            return JsonResponse({'success': False, 'message': 'Invalid phone or amount'})
+        
+        mpesa_service = MpesaService()
+        result = mpesa_service.initiate_stk_push(phone_number, amount, f"TEST{int(amount)}")
+        
+        return JsonResponse(result)
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def mpesa_callback(request):
+    return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Success'})

@@ -36,7 +36,7 @@
 <body>
     <div class="login-card">
         <div class="login-header">
-            <h3><i class="fas fa-pills me-2"></i>Eldoret Chemist</h3>
+            <h3><i class="fas fa-pills me-2"></i>Kakamega Chemist</h3>
             <p class="mb-0">Pharmacy Management System</p>
         </div>
         <div class="login-body">
@@ -55,10 +55,18 @@
                     <label for="username" class="form-label">Username</label>
                     <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
                 </div>
+
+                <!-- Correct password input with input-group -->
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required aria-describedby="togglePassword">
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword" aria-label="Show password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
+
                 <button type="submit" class="btn btn-primary w-100">
                     <i class="fas fa-sign-in-alt me-2"></i>Login
                 </button>
@@ -67,5 +75,18 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const toggle = document.getElementById('togglePassword');
+        const pwd = document.getElementById('password');
+        const icon = toggle.querySelector('i');
+
+        toggle.addEventListener('click', function () {
+            const isHidden = pwd.type === 'password';
+            pwd.type = isHidden ? 'text' : 'password';
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+            toggle.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+        });
+    </script>
 </body>
 </html>

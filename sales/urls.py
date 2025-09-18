@@ -14,4 +14,7 @@ urlpatterns = [
     path('refund/<int:sale_id>/', views.refund_sale, name='refund_sale'),
     path('receipt/<int:sale_id>/', views.get_sale_receipt_data, name='receipt_data'),
     path('daily-summary/', views.daily_sales_summary, name='daily_summary'),
+    path('mpesa/initiate/', views.initiate_mpesa_payment, name='initiate_mpesa'),
+    path('mpesa/callback/', views.mpesa_callback, name='mpesa_callback'),
+    path('mpesa/status/<int:sale_id>/', views.check_payment_status, name='check_payment_status'),
 ]

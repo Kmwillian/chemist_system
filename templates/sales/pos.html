@@ -115,6 +115,56 @@
     </div>
 </div>
 
+<!-- M-Pesa Payment Modal -->
+<div class="modal fade" id="mpesaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">M-Pesa Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="mpesaStep1">
+                    <div class="mb-3">
+                        <label>Phone Number:</label>
+                        <input type="tel" id="mpesaPhone" class="form-control" placeholder="0712345678">
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>Amount:</strong> KES <span id="mpesaAmount">0.00</span>
+                    </div>
+                </div>
+                
+                <div id="mpesaStep2" style="display: none;">
+                    <div class="text-center">
+                        <div class="spinner-border mb-3"></div>
+                        <p>Check your phone and enter M-Pesa PIN</p>
+                        <p><strong>Phone:</strong> <span id="displayPhone"></span></p>
+                    </div>
+                </div>
+                
+                <div id="mpesaStep3" style="display: none;">
+                    <div class="text-center">
+                        <div id="mpesaSuccess" style="display: none;">
+                            <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                            <h5 class="text-success">Payment Successful!</h5>
+                        </div>
+                        <div id="mpesaError" style="display: none;">
+                            <i class="fas fa-times-circle text-danger" style="font-size: 3rem;"></i>
+                            <h5 class="text-danger">Payment Failed</h5>
+                            <p id="errorMessage"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="mpesaPayBtn" class="btn btn-success">Pay Now</button>
+                <button type="button" id="mpesaCompleteBtn" class="btn btn-primary" style="display: none;">Complete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Receipt Modal -->
 <div class="modal fade" id="receiptModal" tabindex="-1">
     <div class="modal-dialog">
@@ -156,11 +206,127 @@ function getCookie(name) {
     return cookieValue;
 }
 
+class MpesaPayment {
+    constructor(posSystem) {
+        this.pos = posSystem;
+        this.saleId = null;
+        this.statusInterval = null;
+        
+        document.getElementById('mpesaPayBtn').addEventListener('click', () => this.initiatePay());
+        document.getElementById('mpesaCompleteBtn').addEventListener('click', () => this.complete());
+    }
+    
+    show(saleData) {
+        const total = saleData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) - (saleData.discount || 0);
+        document.getElementById('mpesaAmount').textContent = total.toFixed(2);
+        document.getElementById('mpesaPhone').value = saleData.customer_phone || '';
+        
+        this.showStep(1);
+        const modal = new bootstrap.Modal(document.getElementById('mpesaModal'));
+        modal.show();
+    }
+    
+    showStep(step) {
+        document.getElementById('mpesaStep1').style.display = step === 1 ? 'block' : 'none';
+        document.getElementById('mpesaStep2').style.display = step === 2 ? 'block' : 'none';
+        document.getElementById('mpesaStep3').style.display = step === 3 ? 'block' : 'none';
+        
+        document.getElementById('mpesaPayBtn').style.display = step === 1 ? 'inline-block' : 'none';
+        document.getElementById('mpesaCompleteBtn').style.display = step === 3 ? 'inline-block' : 'none';
+    }
+    
+    async initiatePay() {
+        const phone = document.getElementById('mpesaPhone').value.trim();
+        if (!phone) {
+            alert('Enter phone number');
+            return;
+        }
+        
+        const saleData = {
+            items: this.pos.cart,
+            customer_name: document.getElementById('customerName').value || 'Walk-in Customer',
+            customer_phone: phone,
+            discount: parseFloat(document.getElementById('discount').value) || 0
+        };
+        
+        const total = saleData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) - (saleData.discount || 0);
+        
+        this.showStep(2);
+        document.getElementById('displayPhone').textContent = phone;
+        
+        try {
+            const response = await fetch('/sales/mpesa/initiate/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.pos.csrfToken
+                },
+                body: JSON.stringify({
+                    phone_number: phone,
+                    amount: total,
+                    sale_data: saleData
+                })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                this.saleId = result.sale_id;
+                this.startStatusCheck();
+            } else {
+                this.showError(result.message);
+            }
+        } catch (error) {
+            this.showError('Network error. Try again.');
+        }
+    }
+    
+    startStatusCheck() {
+        this.statusInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`/sales/mpesa/status/${this.saleId}/`);
+                const result = await response.json();
+                
+                if (result.status === 'completed') {
+                    clearInterval(this.statusInterval);
+                    this.showSuccess();
+                } else if (result.status === 'failed') {
+                    clearInterval(this.statusInterval);
+                    this.showError('Payment failed or cancelled');
+                }
+            } catch (error) {
+                console.error('Status check error:', error);
+            }
+        }, 3000);
+    }
+    
+    showSuccess() {
+        this.showStep(3);
+        document.getElementById('mpesaSuccess').style.display = 'block';
+        document.getElementById('mpesaError').style.display = 'none';
+    }
+    
+    showError(message) {
+        this.showStep(3);
+        document.getElementById('mpesaSuccess').style.display = 'none';
+        document.getElementById('mpesaError').style.display = 'block';
+        document.getElementById('errorMessage').textContent = message;
+    }
+    
+    complete() {
+        bootstrap.Modal.getInstance(document.getElementById('mpesaModal')).hide();
+        this.pos.clearCart();
+        document.getElementById('customerName').value = '';
+        document.getElementById('customerPhone').value = '';
+        alert('Payment completed successfully!');
+    }
+}
+
 class POSSystem {
     constructor() {
         this.cart = [];
         this.csrfToken = getCookie('csrftoken');
         this.currentSaleData = null;
+        this.mpesaPayment = new MpesaPayment(this);
         this.initializeEventListeners();
     }
     
@@ -291,11 +457,26 @@ class POSSystem {
             return;
         }
         
+        const paymentMethod = document.getElementById('paymentMethod').value;
+        
+        if (paymentMethod === 'mpesa') {
+            const saleData = {
+                items: this.cart,
+                customer_name: document.getElementById('customerName').value || 'Walk-in Customer',
+                customer_phone: document.getElementById('customerPhone').value || '',
+                discount: parseFloat(document.getElementById('discount').value) || 0
+            };
+            
+            this.mpesaPayment.show(saleData);
+            return;
+        }
+        
+        // Handle other payment methods
         const saleData = {
             items: this.cart,
             customer_name: document.getElementById('customerName').value || 'Walk-in Customer',
             customer_phone: document.getElementById('customerPhone').value || '',
-            payment_method: document.getElementById('paymentMethod').value,
+            payment_method: paymentMethod,
             discount: parseFloat(document.getElementById('discount').value) || 0
         };
         
