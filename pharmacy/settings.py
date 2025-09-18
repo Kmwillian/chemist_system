@@ -58,7 +58,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'chemist.urls'
+
+ROOT_URLCONF = 'pharmacy.urls'
+
 
 TEMPLATES = [
     {
